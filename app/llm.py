@@ -20,7 +20,9 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.2) -> 
     Calls Groq's chat completions endpoint with JSON-mode forced, so the
     model is constrained to return valid JSON. Returns the raw JSON string
     from the model (caller is responsible for json.loads + validation).
+    Retries with backoff on rate limits (429) or transient server errors.
     """
+    import time
     import requests
 
     api_key = os.environ.get("GROQ_API_KEY")
@@ -41,7 +43,20 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.2) -> 
         "Content-Type": "application/json",
     }
 
-    resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=20)
-    resp.raise_for_status()
-    data = resp.json()
-    return data["choices"][0]["message"]["content"]
+    last_error = None
+    for attempt in range(4):
+        try:
+            resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=20)
+            if resp.status_code == 429:
+                wait = float(resp.headers.get("retry-after", 2 ** attempt))
+                logger.warning(f"Rate limited, retrying in {wait}s (attempt {attempt+1})")
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            last_error = e
+            if attempt < 3:
+                time.sleep(2 ** attempt)
+    raise last_error
