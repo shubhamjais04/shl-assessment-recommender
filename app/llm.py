@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama-3.3-70b-versatile"
+MODEL_NAME = "llama-3.1-8b-instant"
 
 
 def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.2) -> str:
@@ -44,11 +44,11 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.2) -> 
     }
 
     last_error = None
-    for attempt in range(4):
+    for attempt in range(3):
         try:
-            resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=20)
+            resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=12)
             if resp.status_code == 429:
-                wait = float(resp.headers.get("retry-after", 2 ** attempt))
+                wait = min(float(resp.headers.get("retry-after", 1.5)), 3.0)
                 logger.warning(f"Rate limited, retrying in {wait}s (attempt {attempt+1})")
                 time.sleep(wait)
                 continue
@@ -57,6 +57,6 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.2) -> 
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             last_error = e
-            if attempt < 3:
-                time.sleep(2 ** attempt)
+            if attempt < 2:
+                time.sleep(1)
     raise last_error

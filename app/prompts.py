@@ -31,13 +31,16 @@ def build_catalog_context(items):
     for item in items:
         types = ", ".join(item["test_type"])
         levels = ", ".join(item["job_levels"]) or "Not specified"
+        desc = item["description"]
+        if len(desc) > 220:
+            desc = desc[:220].rsplit(" ", 1)[0] + "..."
         lines.append(
             f"- Name: {item['name']}\n"
             f"  URL: {item['url']}\n"
             f"  Test type(s): {types}\n"
             f"  Job levels: {levels}\n"
             f"  Duration: {item['duration'] or 'Not specified'}\n"
-            f"  Description: {item['description']}"
+            f"  Description: {desc}"
         )
     return "\n\n".join(lines)
 

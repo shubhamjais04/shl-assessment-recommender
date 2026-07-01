@@ -10,7 +10,7 @@ from app.schemas import ChatResponse, Recommendation
 logger = logging.getLogger(__name__)
 
 MAX_TURNS = 8
-TOP_K_RETRIEVAL = 18
+TOP_K_RETRIEVAL = 10
 
 # Fast-path guard: catches blatant prompt-injection / jailbreak attempts
 # without even calling the LLM, so we can't be talked out of the system
