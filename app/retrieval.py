@@ -63,6 +63,12 @@ class CatalogRetriever:
             self.corpus.append(text)
 
     def _try_load_embeddings(self):
+        import os
+
+        if os.environ.get("USE_EMBEDDINGS", "false").lower() != "true":
+            logger.info("USE_EMBEDDINGS not enabled; using TF-IDF backend")
+            self.backend = None
+            return
         try:
             from sentence_transformers import SentenceTransformer
             import faiss
