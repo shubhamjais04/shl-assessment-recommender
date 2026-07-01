@@ -28,6 +28,13 @@ def warm_up():
     get_retriever()
     logger.info("Retriever ready.")
 
+@app.get("/")
+def root():
+    return {
+        "service": "SHL Assessment Recommender",
+        "status": "running",
+        "endpoints": {"health": "/health", "chat": "/chat (POST)", "docs": "/docs"},
+    }
 
 @app.get("/health", response_model=HealthResponse)
 def health():
